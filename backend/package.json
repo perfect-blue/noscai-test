@@ -1,0 +1,27 @@
+{
+  "name": "noscai",
+  "version": "1.0.0",
+  "description": "test for noscai",
+  "main": "app.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/perfect-blue/noscai-test.git"
+  },
+  "keywords": [],
+  "author": "muhammad ravi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/perfect-blue/noscai-test/issues"
+  },
+  "homepage": "https://github.com/perfect-blue/noscai-test#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.2",
+    "typescript": "^5.8.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

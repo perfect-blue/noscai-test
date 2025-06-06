@@ -39,6 +39,32 @@ coverage/
 .nyc_output/
 jest-coverage/
 
+# React build artifacts
+*.cache/
+.cache/
+.cache-loader/
+
+# React-specific (used by react-scripts)
+*.env.local
+*.env.development
+*.env.test
+*.env.production
+
+# Lint cache
+.eslintcache
+
+# Testing framework snapshots
+__snapshots__/
+
+# Parcel/Vite-specific (only if using them)
+.parcel-cache/
+.vite/
+
+# Optional: lock files (if using only one package manager)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 # GitHub
 .git/
 

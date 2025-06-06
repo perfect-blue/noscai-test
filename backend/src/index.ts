@@ -1,10 +1,13 @@
 import express from 'express';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (_req, res) => {
-  res.send('Hello from TypeScript + Docker hjow lofds!');
+app.use(cors()); // Allow requests from React on a different port
+
+app.get('/api/message', (_req, res) => {
+  res.json({ message: 'Hello from TypeScript backend!' });
 });
 
 app.listen(PORT, () => {

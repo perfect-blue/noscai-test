@@ -2,28 +2,26 @@
   "name": "noscai",
   "version": "1.0.0",
   "description": "test for noscai",
-  "main": "app.ts",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/perfect-blue/noscai-test.git"
-  },
-  "keywords": [],
+  "main": "dist/index.js",
   "author": "muhammad ravi",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/perfect-blue/noscai-test/issues"
-  },
-  "homepage": "https://github.com/perfect-blue/noscai-test#readme",
-  "devDependencies": {
-    "@types/cors": "^2.8.18",
-    "@types/express": "^5.0.2",
-    "typescript": "^5.8.3"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "ws": "^8.14.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "@types/express": "^4.17.0",
+    "@types/cors": "^2.8.0",
+    "ts-node": "^10.9.0",
+    "nodemon": "^3.0.1"
   }
 }

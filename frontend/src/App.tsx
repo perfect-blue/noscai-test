@@ -1,30 +1,52 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'jotai';
-import AppointmentForm from './components/AppointmentForm';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AppointmentForm } from '@/components/AppointmentForm';
+import { AppointmentsList } from '@/components/AppointmentsList';
+import { LoginForm } from '@/components/LoginForm';
+
+const queryClient = new QueryClient();
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
 
 function App() {
   return (
     <Provider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/appointments/:id" element={<AppointmentForm />} />
-            <Route path="/" element={
-              <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                    Appointment Lock System
-                  </h1>
-                  <p className="text-gray-600">
-                    Navigate to /appointments/:id to test the locking system
-                  </p>
-                </div>
-              </div>
-            } />
-          </Routes>
-        </div>
-      </Router>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-50">
+              <Routes>
+                <Route path="/login" element={<LoginForm />} />
+                <Route path="/appointments/:id" element={
+                  <ProtectedRoute>
+                    <AppointmentForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <AppointmentsList />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </div>
+          </Router>
+        </AuthProvider>
+      </QueryClientProvider>
     </Provider>
   );
 }

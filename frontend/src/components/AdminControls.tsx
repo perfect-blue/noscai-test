@@ -6,7 +6,7 @@ import { LockStatus } from '@/types/appointment';
 
 interface AdminControlsProps {
   appointmentId: string;
-  lockStatus: LockStatus;
+  lockStatus: LockStatus | null;
   userRole: string;
   className?: string;
 }

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AppointmentLock, Appointment } from '@/types/appointment';
+import { AppointmentLock, Appointment, User } from '@/types/appointment';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -18,6 +18,19 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Auth API
+export const authApi = {
+  login: async (email: string, password: string): Promise<{ token: string; user: User }> => {
+    const response = await api.post('/auth/login', { email, password });
+    return response.data;
+  },
+
+  getCurrentUser: async (): Promise<User> => {
+    const response = await api.get('/auth/me');
+    return response.data;
+  },
+};
 
 export const appointmentApi = {
   // Lock management
@@ -39,24 +52,34 @@ export const appointmentApi = {
     await api.delete(`/appointments/${appointmentId}/force-release-lock`);
   },
 
-  // Appointment CRUD (mock for now)
+  renewLock: async (appointmentId: string): Promise<AppointmentLock> => {
+    const response = await api.post(`/appointments/${appointmentId}/renew-lock`);
+    return response.data;
+  },
+
+  // Appointment CRUD
   getAppointment: async (id: string): Promise<Appointment> => {
-    // Mock data - replace with actual API call
-    return {
-      id,
-      title: 'Sample Appointment',
-      description: 'This is a sample appointment for testing the locking system',
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 60 * 60 * 1000), // 1 hour later
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const response = await api.get(`/appointments/${id}`);
+    return response.data;
   },
 
   updateAppointment: async (id: string, data: Partial<Appointment>): Promise<Appointment> => {
-    // Mock implementation - replace with actual API call
-    const appointment = await appointmentApi.getAppointment(id);
-    return { ...appointment, ...data, updatedAt: new Date() };
+    const response = await api.put(`/appointments/${id}`, data);
+    return response.data;
+  },
+
+  createAppointment: async (data: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> => {
+    const response = await api.post('/appointments', data);
+    return response.data;
+  },
+
+  deleteAppointment: async (id: string): Promise<void> => {
+    await api.delete(`/appointments/${id}`);
+  },
+
+  listAppointments: async (): Promise<Appointment[]> => {
+    const response = await api.get('/appointments');
+    return response.data;
   },
 };
 

@@ -4,7 +4,7 @@ import { Lock, User, Clock } from 'lucide-react';
 import { LockStatus } from '@/types/appointment';
 
 interface LockIndicatorProps {
-  lockStatus: LockStatus;
+  lockStatus: LockStatus | null;
   className?: string;
 }
 
@@ -12,6 +12,16 @@ export const LockIndicator: React.FC<LockIndicatorProps> = ({
   lockStatus, 
   className = '' 
 }) => {
+  // Handle null lockStatus
+  if (!lockStatus) {
+    return (
+      <div className={`flex items-center gap-2 text-gray-400 ${className}`}>
+        <div className="w-2 h-2 bg-gray-400 rounded-full" />
+        <span className="text-sm">Loading lock status...</span>
+      </div>
+    );
+  }
+
   if (!lockStatus.isLocked) {
     return (
       <div className={`flex items-center gap-2 text-green-400 ${className}`}>

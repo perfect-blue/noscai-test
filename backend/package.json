@@ -1,5 +1,5 @@
 {
-  "name": "noscai",
+  "name": "appointment-locking-backend",
   "version": "1.0.0",
   "main": "dist/app.js",
   "scripts": {
@@ -9,10 +9,13 @@
     "test": "jest",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "prisma migrate reset --force && npm run db:seed"
   },
   "dependencies": {
     "@prisma/client": "^5.3.1",
+    "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -22,7 +25,7 @@
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.2",
     "prisma": "^5.3.1",
-    "redis": "^4.7.1",
+    "redis": "^4.6.8",
     "socket.io": "^4.7.2"
   },
   "devDependencies": {
@@ -35,10 +38,10 @@
     "jest": "^29.6.2",
     "nodemon": "^3.0.1",
     "ts-node": "^10.9.1",
+    "tsx": "^3.12.7",
     "typescript": "^5.1.6"
   },
-  "keywords": [],
-  "author": "Muhammad Ravi",
-  "license": "ISC",
-  "description": ""
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
 }

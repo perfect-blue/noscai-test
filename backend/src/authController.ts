@@ -21,12 +21,12 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const devLogin = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email, password } = req.body;
     
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
     const user = await prisma.user.findUnique({
@@ -34,7 +34,13 @@ export const devLogin = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // For now, we'll use a simple password check
+    // In production, you should hash passwords and compare hashes
+    if (password !== 'password123') {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
@@ -59,6 +65,26 @@ export const devLogin = async (req: Request, res: Response) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Login failed' });
+  }
+};
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    // The user info is already available from the auth middleware
+    const user = (req as any).user;
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get user info' });
   }
 };
 

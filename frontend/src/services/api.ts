@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { AppointmentLock, Appointment, User } from '@/types/appointment';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: API_BASE_URL, // Remove the extra '/api' here
   headers: {
     'Content-Type': 'application/json',
   },
@@ -32,7 +32,13 @@ export const authApi = {
   },
 };
 
+// Add this export for the updateAppointment function
 export const appointmentApi = {
+  updateAppointment: async (id: string, data: Partial<Appointment>) => {
+    const response = await api.put(`/appointments/${id}`, data);
+    return response.data;
+  },
+
   // Lock management
   getLockStatus: async (appointmentId: string): Promise<AppointmentLock | null> => {
     const response = await api.get(`/appointments/${appointmentId}/lock-status`);
@@ -60,11 +66,6 @@ export const appointmentApi = {
   // Appointment CRUD
   getAppointment: async (id: string): Promise<Appointment> => {
     const response = await api.get(`/appointments/${id}`);
-    return response.data;
-  },
-
-  updateAppointment: async (id: string, data: Partial<Appointment>): Promise<Appointment> => {
-    const response = await api.put(`/appointments/${id}`, data);
     return response.data;
   },
 

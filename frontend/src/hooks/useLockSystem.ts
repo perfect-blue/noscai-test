@@ -36,7 +36,7 @@ export const useLockSystem = (appointmentId: string): UseLockSystemReturn => {
             canEdit: lock.userId === currentUser?.id,
             appointmentId: lock.appointmentId,
             lockedBy: lock.userInfo,
-            expiresAt: lock.expiresAt.toISOString(),
+            expiresAt: typeof lock.expiresAt === 'string' ? lock.expiresAt : lock.expiresAt.toISOString(),
           };
           setLockStatus(status);
         } else {
@@ -57,9 +57,8 @@ export const useLockSystem = (appointmentId: string): UseLockSystemReturn => {
     }
   }, [appointmentId, currentUser, setLockStatus]);
 
-  const acquireLock = useCallback(async () => {
-    if (!currentUser) throw new Error('User not authenticated');
-    
+  const acquireLock = async () => {
+    if (!currentUser) return;
     setIsAcquiring(true);
     try {
       const lock = await appointmentApi.acquireLock(appointmentId);
@@ -67,18 +66,17 @@ export const useLockSystem = (appointmentId: string): UseLockSystemReturn => {
         isLocked: true,
         isOwner: true,
         canEdit: true,
-        appointmentId,
-        lockedBy: currentUser,
-        expiresAt: lock.expiresAt.toISOString(),
+        appointmentId: lock.appointmentId,
+        lockedBy: lock.userInfo,
+        expiresAt: typeof lock.expiresAt === 'string' ? lock.expiresAt : lock.expiresAt.toISOString(),
       };
       setLockStatus(newLockStatus);
     } catch (error) {
       console.error('Failed to acquire lock:', error);
-      throw error;
     } finally {
       setIsAcquiring(false);
     }
-  }, [appointmentId, currentUser, setLockStatus]);
+  };
 
   const releaseLock = useCallback(async () => {
     setIsReleasing(true);
@@ -133,18 +131,24 @@ export const useLockSystem = (appointmentId: string): UseLockSystemReturn => {
   }, [appointmentId, lockStatus?.isOwner, setLockStatus, releaseLock]);
 
   const handleUpdateCursor = useCallback((position: { x: number; y: number }) => {
-    if (lockStatus?.isOwner && currentUser) {
-      const cursorUpdate = {
-        appointmentId,
-        userId: currentUser.id,
-        userInfo: { name: currentUser.name, email: currentUser.email },
-        x: position.x,
-        y: position.y,
-        timestamp: Date.now()
-      };
-      updateCursor(cursorUpdate);
-      sendCursorUpdate(appointmentId, position.x, position.y);
-    }
+    if (!lockStatus?.isOwner || !currentUser) return;
+    
+    console.log('Updating cursor position:', position, 'lockStatus.isOwner:', lockStatus.isOwner);
+    
+    const cursorUpdate = {
+      appointmentId,
+      userId: currentUser.id,
+      userInfo: {
+        name: currentUser.name,
+        email: currentUser.email
+      },
+      x: position.x,
+      y: position.y,
+      timestamp: Date.now()
+    };
+    updateCursor(cursorUpdate);
+    sendCursorUpdate(appointmentId, position.x, position.y);
+    console.log('Sent cursor update:', cursorUpdate);
   }, [appointmentId, lockStatus?.isOwner, currentUser, updateCursor, sendCursorUpdate]);
 
   // Auto-renewal logic

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, User, Clock } from 'lucide-react';
 import { LockStatus } from '@/types/appointment';
@@ -12,8 +12,23 @@ export const LockIndicator: React.FC<LockIndicatorProps> = ({
   lockStatus, 
   className = '' 
 }) => {
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  
+  // Add debugging
+  console.log('LockIndicator - lockStatus:', lockStatus);
+  
+  // Update timer every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
   // Handle null lockStatus
   if (!lockStatus) {
+    console.log('LockIndicator - lockStatus is null');
     return (
       <div className={`flex items-center gap-2 text-gray-400 ${className}`}>
         <div className="w-2 h-2 bg-gray-400 rounded-full" />
@@ -23,6 +38,7 @@ export const LockIndicator: React.FC<LockIndicatorProps> = ({
   }
 
   if (!lockStatus.isLocked) {
+    console.log('LockIndicator - not locked');
     return (
       <div className={`flex items-center gap-2 text-green-400 ${className}`}>
         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -32,9 +48,11 @@ export const LockIndicator: React.FC<LockIndicatorProps> = ({
   }
 
   const timeLeft = lockStatus.expiresAt 
-    ? Math.max(0, Math.floor((new Date(lockStatus.expiresAt).getTime() - Date.now()) / 1000))
+    ? Math.max(0, Math.floor((new Date(lockStatus.expiresAt).getTime() - currentTime) / 1000))
     : 0;
 
+  console.log('LockIndicator - timeLeft:', timeLeft, 'expiresAt:', lockStatus.expiresAt);
+  
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 

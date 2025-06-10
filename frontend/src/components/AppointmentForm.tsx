@@ -42,15 +42,25 @@ export const AppointmentForm: React.FC = () => {
   const userRole = 'user'; // This would come from auth context
 
   const handleInputChange = (field: keyof AppointmentData, value: string) => {
-    if (!canEdit) return;
+    console.log('handleInputChange - canEdit:', canEdit, 'lockStatus:', lockStatus);
+    if (!canEdit) {
+      console.log('Cannot edit - user does not own lock');
+      return;
+    }
     
     setFormData(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
 
+  // In the handleMouseMove function, add more logging:
   const handleMouseMove = (e: React.MouseEvent) => {
+    const coordinates = { x: e.clientX, y: e.clientY };
+    console.log('Mouse coordinates:', coordinates, 'canEdit:', canEdit, 'isConnected:', /* get from useWebSocket */);
+    
     if (canEdit) {
-      updateCursor({ x: e.clientX, y: e.clientY });
+      updateCursor(coordinates);
+    } else {
+      console.log('Cannot update cursor - user cannot edit');
     }
   };
 
@@ -58,11 +68,17 @@ export const AppointmentForm: React.FC = () => {
     if (!canEdit || !hasChanges) return;
     
     try {
-      // Save logic here
-      console.log('Saving appointment:', formData);
+      await appointmentApi.updateAppointment(appointmentId, {
+        title: formData.title,
+        description: formData.description,
+        patientName: formData.patientName,
+        // Add other fields as needed
+      });
       setHasChanges(false);
+      console.log('Appointment saved successfully');
     } catch (error) {
-      console.error('Failed to save:', error);
+      console.error('Failed to save appointment:', error);
+      alert('Failed to save appointment. Please try again.');
     }
   };
 

@@ -10,7 +10,7 @@ import {
 } from '@/store/lockStore';
 import { CursorUpdate } from '@/types/appointment';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 
 export const useWebSocket = (appointmentId?: string) => {
   const socketRef = useRef<Socket | null>(null);
@@ -22,30 +22,62 @@ export const useWebSocket = (appointmentId?: string) => {
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
-    if (!token) return;
+    if (!token) {
+      console.log('No auth token found, skipping WebSocket connection');
+      return;
+    }
 
+    console.log('Attempting to connect to WebSocket at:', WS_URL);
+    
     const socket = io(WS_URL, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'], // Try polling first, then websocket
+      upgrade: true,
+      rememberUpgrade: true,
+      forceNew: false,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 10,
+      timeout: 20000,
     });
 
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('WebSocket connected');
+      console.log('WebSocket connected successfully');
+      setIsConnected(true);
+      if (appointmentId) {
+        console.log('Joining appointment:', appointmentId);
+        socket.emit('joinAppointment', appointmentId);
+      }
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error);
+      setIsConnected(false);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('WebSocket disconnected:', reason);
+      setIsConnected(false);
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+      console.log('WebSocket reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);
       if (appointmentId) {
         socket.emit('joinAppointment', appointmentId);
       }
     });
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
+    socket.on('reconnect_error', (error) => {
+      console.error('WebSocket reconnection error:', error);
     });
 
     // Lock events
     socket.on('lockAcquired', (data) => {
+      console.log('Lock acquired event received:', data);
       updateLock({
         appointmentId: data.appointmentId,
         lock: {
@@ -58,6 +90,7 @@ export const useWebSocket = (appointmentId?: string) => {
     });
 
     socket.on('lockReleased', (data) => {
+      console.log('Lock released event received:', data);
       updateLock({
         appointmentId: data.appointmentId,
         lock: null,
@@ -65,6 +98,7 @@ export const useWebSocket = (appointmentId?: string) => {
     });
 
     socket.on('lockForceReleased', (data) => {
+      console.log('Lock force released event received:', data);
       updateLock({
         appointmentId: data.appointmentId,
         lock: null,
@@ -73,6 +107,7 @@ export const useWebSocket = (appointmentId?: string) => {
 
     // Cursor events
     socket.on('cursorUpdate', (data: CursorUpdate) => {
+      console.log('Cursor update received:', data);
       if (!appointmentId) return;
       
       const currentCursors = cursors[appointmentId] || [];
@@ -86,30 +121,37 @@ export const useWebSocket = (appointmentId?: string) => {
     });
 
     return () => {
+      console.log('Cleaning up WebSocket connection');
       socket.disconnect();
     };
   }, [appointmentId, setIsConnected, updateLock, updateCursors, cursors]);
 
   const joinAppointment = (id: string) => {
-    if (socketRef.current) {
+    if (socketRef.current && isConnected) {
+      console.log('Joining appointment:', id);
       socketRef.current.emit('joinAppointment', id);
     }
   };
 
   const leaveAppointment = (id: string) => {
-    if (socketRef.current) {
+    if (socketRef.current && isConnected) {
+      console.log('Leaving appointment:', id);
       socketRef.current.emit('leaveAppointment', id);
     }
   };
 
   const sendCursorUpdate = (appointmentId: string, x: number, y: number) => {
     if (socketRef.current && isConnected) {
+      console.log('Sending cursor update via WebSocket:', { appointmentId, x, y });
       socketRef.current.emit('cursorUpdate', { appointmentId, x, y });
+    } else {
+      console.log('WebSocket not connected, cannot send cursor update. Connected:', isConnected);
     }
   };
 
   const renewLock = (appointmentId: string) => {
     if (socketRef.current && isConnected) {
+      console.log('Renewing lock for appointment:', appointmentId);
       socketRef.current.emit('renewLock', appointmentId);
     }
   };

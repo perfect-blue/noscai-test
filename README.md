@@ -23,11 +23,12 @@ docker-compose up -d postgres redis
 cd backend
 
 npm install
+npm install --save-dev tsx
 
 npx prisma generate
-npx prisma push db
+npx prisma db push
 
-npx prisma seed db
+npx prisma db seed
 
 npm run dev
 ```

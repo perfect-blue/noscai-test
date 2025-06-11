@@ -72,3 +72,58 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │    Backend      │    │   Database      │
+│   (React)       │    │   (Node.js)     │    │                 │
+│                 │    │                 │    │                 │
+│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│ │AppointmentForm│◄────┤ │Lock Service │ │    │ │ PostgreSQL  │ │
+│ │             │ │    │ │             │ │    │ │             │ │
+│ │LockIndicator│ │    │ │AppointmentCtrl│◄────┤ │Appointments │ │
+│ │             │ │    │ │             │ │    │ │Locks        │ │
+│ │FollowPointer│ │    │ │SocketHandler│ │    │ │Users        │ │
+│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
+│                 │    │                 │    │                 │
+│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│ │useLockSystem│ │    │ │   Redis     │ │    │ │   Prisma    │ │
+│ │useWebSocket │◄────┤ │   Cache     │ │    │ │    ORM      │ │
+│ └─────────────┘ │    │ │             │ │    │ └─────────────┘ │
+└─────────────────┘    │ └─────────────┘ │    └─────────────────┘
+                       │                 │
+                       │ ┌─────────────┐ │
+                       │ │ Socket.IO   │ │
+                       │ │ Real-time   │ │
+                       │ │Communication│ │
+                       │ └─────────────┘ │
+                       └─────────────────┘
+
+### Key Components 1. Lock Service ( lockService.ts )
+- Purpose : Core locking mechanism with Redis for atomic operations
+- Features :
+  - 5-minute lock duration with auto-renewal
+  - Race condition prevention using Redis atomic operations
+  - Database persistence with Prisma
+  - Automatic cleanup of expired locks 2. Real-time Communication (Socket.IO)
+- Purpose : Live updates and cursor tracking
+- Features :
+  - Lock acquisition/release notifications
+  - Real-time cursor position sharing
+  - User presence indicators
+  - Rate limiting for performance 3. Frontend State Management (Jotai)
+- Purpose : Reactive state management for locks and UI
+- Features :
+  - Atomic state updates
+  - Real-time lock status synchronization
+  - Cursor position tracking 4. Security & Performance
+- JWT authentication
+- Rate limiting (100 req/15min general, 10 lock ops/min)
+- CORS protection
+- Helmet security headers
+
+Data Flow
+
+- User Edit Attempt → Auto Lock Request → Redis Check → DB Transaction → Socket Broadcast → UI Update
+- User Action → Socket Event → All Connected Clients → State Update → UI Refresh
+- Timer Check → Auto-renewal (if active) → Force Release (if expired) → Cleanup → Notification

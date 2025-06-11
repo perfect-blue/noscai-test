@@ -38,21 +38,44 @@ export const AppointmentForm: React.FC = () => {
   });
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [isEditingAttempted, setIsEditingAttempted] = useState(false);
   const canEdit = lockStatus?.isOwner || false;
-  const userRole = 'user'; // This would come from auth context
+  const userRole = 'user';
 
-  const handleInputChange = (field: keyof AppointmentData, value: string) => {
-    console.log('handleInputChange - canEdit:', canEdit, 'lockStatus:', lockStatus);
-    if (!canEdit) {
-      console.log('Cannot edit - user does not own lock');
+  // Auto-acquire lock when user attempts to edit
+  const handleInputChange = async (field: keyof AppointmentData, value: string) => {
+    // If user doesn't have lock and tries to edit, automatically acquire lock
+    if (!canEdit && !isEditingAttempted && !lockStatus?.isLocked) {
+      setIsEditingAttempted(true);
+      try {
+        await acquireLock();
+        // After acquiring lock, apply the change
+        setFormData(prev => ({ ...prev, [field]: value }));
+        setHasChanges(true);
+      } catch (error) {
+        console.error('Failed to acquire lock:', error);
+        alert('Cannot edit: ' + (error as Error).message);
+        setIsEditingAttempted(false);
+        return;
+      }
+    } else if (canEdit) {
+      // User already has lock, proceed with edit
+      setFormData(prev => ({ ...prev, [field]: value }));
+      setHasChanges(true);
+    } else if (lockStatus?.isLocked && !lockStatus?.isOwner) {
+      // Someone else has the lock
+      alert(`Cannot edit: Appointment is being edited by ${lockStatus.lockedBy?.name}`);
       return;
     }
-    
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setHasChanges(true);
   };
 
-  // In the handleMouseMove function, add more logging:
+  // Reset editing attempt when lock status changes
+  useEffect(() => {
+    if (lockStatus?.isOwner) {
+      setIsEditingAttempted(false);
+    }
+  }, [lockStatus?.isOwner]);
+
   const handleMouseMove = (e: React.MouseEvent) => {
     const coordinates = { x: e.clientX, y: e.clientY };
     console.log('Mouse coordinates:', coordinates, 'canEdit:', canEdit, 'isConnected:', /* get from useWebSocket */);
@@ -98,53 +121,28 @@ export const AppointmentForm: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">
-            Edit Appointment
+            Edit Appointment {appointmentId}
           </h1>
-          <div className="flex items-center gap-3">
-            {hasChanges && canEdit && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                Save Changes
-              </motion.button>
-            )}
-          </div>
+          <LockIndicator lockStatus={lockStatus} />
         </div>
 
-        {/* Lock Status */}
-        <LockIndicator lockStatus={lockStatus} />
-
-        {/* Admin Controls */}
-        <AdminControls
-          appointmentId={appointmentId}
-          lockStatus={lockStatus}
-          userRole={userRole}
-        />
-
-        {/* Request Lock Button */}
-        {!lockStatus?.isLocked && (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleAcquireLock}
-            disabled={isAcquiring}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            <User className="w-4 h-4" />
-            {isAcquiring ? 'Acquiring...' : 'Start Editing'}
-          </motion.button>
+        {/* Remove the Start Editing button - auto-acquire on edit attempt */}
+        {lockStatus?.isLocked && !lockStatus?.isOwner && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800">
+              This appointment is currently being edited by {lockStatus.lockedBy?.name}.
+              You can view the form but cannot make changes.
+            </p>
+          </div>
         )}
 
         {/* Form */}
         <motion.div
           initial={{ opacity: 0.7 }}
-          animate={{ opacity: canEdit ? 1 : 0.7 }}
+          animate={{ opacity: 1 }}
           className="space-y-6 bg-white p-6 rounded-lg border"
         >
+          {/* Form fields remain the same but now auto-acquire lock on edit */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -154,8 +152,7 @@ export const AppointmentForm: React.FC = () => {
                 type="text"
                 value={formData.patientName}
                 onChange={(e) => handleInputChange('patientName', e.target.value)}
-                disabled={!canEdit}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter patient name"
               />
             </div>

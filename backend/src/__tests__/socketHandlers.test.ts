@@ -109,8 +109,6 @@ describe('Socket Handlers', () => {
     });
 
     it('should handle invalid appointment ID', (done) => {
-      // Remove the incorrect serverSocket.on('joinAppointment') listener
-      
       clientSocket.on('error', (error: any) => {
         expect(error.message).toBe('Invalid appointment ID');
         done();

@@ -5,7 +5,7 @@ services:
     image: postgres:15
     environment:
       POSTGRES_DB: appointment_locks
-      POSTGRES_USER: postgres
+      POSTGRES_USER: test-db
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"

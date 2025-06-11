@@ -37,8 +37,6 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // For now, we'll use a simple password check
-    // In production, you should hash passwords and compare hashes
     if (password !== 'password123') {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -70,7 +68,6 @@ export const login = async (req: Request, res: Response) => {
 
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
-    // The user info is already available from the auth middleware
     const user = (req as any).user;
     
     if (!user) {

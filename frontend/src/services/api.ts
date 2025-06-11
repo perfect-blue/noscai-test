@@ -32,7 +32,6 @@ export const authApi = {
   },
 };
 
-// Add this export for the updateAppointment function
 export const appointmentApi = {
   updateAppointment: async (id: string, data: Partial<Appointment>) => {
     const response = await api.put(`/appointments/${id}`, data);

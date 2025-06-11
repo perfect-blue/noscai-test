@@ -23,7 +23,7 @@ const mockRedis = {
   set: jest.fn(),
   setEx: jest.fn(),
   del: jest.fn(),
-  connect: jest.fn()
+  connect: jest.fn().mockResolvedValue(undefined)
 };
 
 (PrismaClient as jest.Mock).mockImplementation(() => mockPrisma);
